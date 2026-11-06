@@ -1,0 +1,618 @@
+openapi: 3.1.0
+info:
+  title: SoundScape API
+  version: 1.0.0
+  description: API for crowdsourced neighborhood noise readings and exposure analytics.
+servers:
+  - url: /api/v1
+    description: Business API
+tags:
+  - name: Noise readings
+  - name: Contributors
+  - name: Neighborhoods
+  - name: Sensitive sites
+  - name: Analytics
+  - name: Service
+paths:
+  /metrics/noise:
+    post:
+      tags: [Noise readings]
+      operationId: createNoiseReading
+      summary: Submit a noise reading
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NoiseReadingInput' }
+      responses:
+        '201':
+          description: Reading stored
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NoiseReading' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+    get:
+      tags: [Noise readings]
+      operationId: listNoiseReadings
+      summary: List readings with filters and pagination
+      parameters:
+        - { name: neighborhoodId, in: query, schema: { $ref: '#/components/schemas/ObjectId' } }
+        - { name: contributorId, in: query, schema: { $ref: '#/components/schemas/ObjectId' } }
+        - { name: from, in: query, schema: { type: string, format: date-time } }
+        - { name: to, in: query, schema: { type: string, format: date-time } }
+        - name: includeFlagged
+          in: query
+          description: Requires admin bearer token when true.
+          schema: { type: boolean, default: false }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+      responses:
+        '200':
+          description: Paginated readings
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/Page' }
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/NoiseReading' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /metrics/noise/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Noise readings]
+      operationId: getNoiseReading
+      summary: Get a reading
+      responses:
+        '200':
+          description: Reading
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NoiseReading' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Noise readings]
+      operationId: updateNoiseReading
+      summary: Flag a reading or change its source
+      security: [{ AdminToken: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NoiseReadingPatch' }
+      responses:
+        '200':
+          description: Updated reading
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NoiseReading' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Noise readings]
+      operationId: deleteNoiseReading
+      summary: Delete a reading
+      security: [{ AdminToken: [] }]
+      responses:
+        '204': { description: Reading deleted; response has no body }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /contributors:
+    post:
+      tags: [Contributors]
+      operationId: createContributor
+      summary: Register a contributor device
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ContributorInput' }
+      responses:
+        '201':
+          description: Contributor created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Contributor' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /contributors/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Contributors]
+      operationId: getContributor
+      summary: Get a contributor and its reading count
+      responses:
+        '200':
+          description: Contributor
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Contributor' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Contributors]
+      operationId: updateContributor
+      summary: Change or clear a contributor display name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ContributorPatch' }
+      responses:
+        '200':
+          description: Updated contributor
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Contributor' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Contributors]
+      operationId: deleteContributor
+      summary: Delete a contributor without readings
+      responses:
+        '204': { description: Contributor deleted; response has no body }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /neighborhoods:
+    post:
+      tags: [Neighborhoods]
+      operationId: createNeighborhood
+      summary: Create a neighborhood
+      security: [{ AdminToken: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NeighborhoodInput' }
+      responses:
+        '201':
+          description: Neighborhood created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Neighborhood' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    get:
+      tags: [Neighborhoods]
+      operationId: listNeighborhoods
+      summary: List neighborhoods without their boundary geometry
+      parameters:
+        - { name: city, in: query, schema: { type: string } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+      responses:
+        '200':
+          description: Paginated neighborhoods
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NeighborhoodPage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /neighborhoods/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Neighborhoods]
+      operationId: getNeighborhood
+      summary: Get a neighborhood including its boundary
+      responses:
+        '200':
+          description: Neighborhood
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Neighborhood' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Neighborhoods]
+      operationId: replaceNeighborhood
+      summary: Replace a neighborhood
+      security: [{ AdminToken: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NeighborhoodInput' }
+      responses:
+        '200':
+          description: Updated neighborhood
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Neighborhood' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    delete:
+      tags: [Neighborhoods]
+      operationId: deleteNeighborhood
+      summary: Delete an unreferenced neighborhood
+      security: [{ AdminToken: [] }]
+      responses:
+        '204': { description: Neighborhood deleted; response has no body }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /sensitive-sites:
+    post:
+      tags: [Sensitive sites]
+      operationId: createSensitiveSite
+      summary: Create a sensitive site inside a neighborhood
+      security: [{ AdminToken: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SiteInput' }
+      responses:
+        '201':
+          description: Site created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SensitiveSite' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+    get:
+      tags: [Sensitive sites]
+      operationId: listSensitiveSites
+      summary: List sensitive sites
+      parameters:
+        - { name: neighborhoodId, in: query, schema: { $ref: '#/components/schemas/ObjectId' } }
+        - { name: siteType, in: query, schema: { type: string, enum: [school, hospital, kindergarten, care_home] } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+      responses:
+        '200':
+          description: Paginated sites
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SitePage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /sensitive-sites/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Sensitive sites]
+      operationId: getSensitiveSite
+      summary: Get a sensitive site
+      responses:
+        '200':
+          description: Sensitive site
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SensitiveSite' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Sensitive sites]
+      operationId: replaceSensitiveSite
+      summary: Replace a sensitive site
+      security: [{ AdminToken: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SiteReplacement' }
+      responses:
+        '200':
+          description: Updated site
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SensitiveSite' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+    delete:
+      tags: [Sensitive sites]
+      operationId: deleteSensitiveSite
+      summary: Delete a sensitive site
+      security: [{ AdminToken: [] }]
+      responses:
+        '204': { description: Site deleted; response has no body }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /analytics/heatmap:
+    get:
+      tags: [Analytics]
+      operationId: getHeatmap
+      summary: Aggregate unflagged readings by neighborhood
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, format: date-time } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date-time } }
+        - { name: city, in: query, schema: { type: string } }
+        - { name: groupBy, in: query, schema: { type: string, enum: [none, hourOfDay], default: none } }
+      responses:
+        '200':
+          description: Heatmap data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Heatmap' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /analytics/sensitive-sites/{id}/exposure:
+    get:
+      tags: [Analytics]
+      operationId: getSensitiveSiteExposure
+      summary: Aggregate unflagged readings within the site's protection radius
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+        - { name: from, in: query, required: true, schema: { type: string, format: date-time } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date-time } }
+      responses:
+        '200':
+          description: Exposure statistics
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Exposure' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /:
+    servers:
+      - url: /
+    get:
+      tags: [Service]
+      operationId: getServiceName
+      summary: Service greeting
+      responses:
+        '200':
+          description: Service name
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name: { type: string, const: blarescape-backend }
+  /health:
+    servers:
+      - url: /
+    get:
+      tags: [Service]
+      operationId: getHealth
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, const: ok }
+components:
+  securitySchemes:
+    AdminToken:
+      type: http
+      scheme: bearer
+      description: Bearer token configured by ADMIN_API_TOKEN.
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/ObjectId' }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 0, maximum: 200, default: 50 }
+    Offset:
+      name: offset
+      in: query
+      schema: { type: integer, minimum: 0, default: 0 }
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: Missing or invalid admin token
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflict:
+      description: Request conflicts with existing data or references
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    UnprocessableEntity:
+      description: Related resource or geographic location is invalid
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+  schemas:
+    ObjectId:
+      type: string
+      pattern: '^[a-fA-F0-9]{24}$'
+      example: 6718f1e0c1e5b3a9d0f41a10
+    Error:
+      type: object
+      required: [statusCode, error, message]
+      properties:
+        statusCode: { type: integer }
+        error: { type: string }
+        message: { type: string }
+    Page:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items: { type: array, items: {} }
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
+    NoiseReadingInput:
+      type: object
+      required: [contributorId, longitude, latitude, decibelLevel, recordedAt]
+      properties:
+        contributorId: { $ref: '#/components/schemas/ObjectId' }
+        longitude: { type: number, minimum: -180, maximum: 180 }
+        latitude: { type: number, minimum: -90, maximum: 90 }
+        decibelLevel: { type: number, minimum: 0, maximum: 140 }
+        recordedAt: { type: string, format: date-time }
+        noiseSource: { type: string, enum: [traffic, construction, nightlife, industry, aircraft, other] }
+        measurementDurationSeconds: { type: integer, minimum: 1 }
+    NoiseReadingPatch:
+      type: object
+      minProperties: 1
+      properties:
+        isFlagged: { type: boolean }
+        noiseSource: { type: [string, 'null'], enum: [traffic, construction, nightlife, industry, aircraft, other, null] }
+    NoiseReading:
+      allOf:
+        - { $ref: '#/components/schemas/NoiseReadingInput' }
+        - type: object
+          required: [id, neighborhoodId, receivedAt, isFlagged]
+          properties:
+            id: { $ref: '#/components/schemas/ObjectId' }
+            neighborhoodId: { oneOf: [{ $ref: '#/components/schemas/ObjectId' }, { type: 'null' }] }
+            receivedAt: { type: string, format: date-time }
+            isFlagged: { type: boolean }
+    ContributorInput:
+      type: object
+      required: [anonymousDeviceId]
+      properties:
+        anonymousDeviceId: { type: string, minLength: 1 }
+        displayName: { type: string, minLength: 1 }
+    ContributorPatch:
+      type: object
+      required: [displayName]
+      properties:
+        displayName: { type: [string, 'null'], minLength: 1 }
+    Contributor:
+      type: object
+      required: [id, anonymousDeviceId, readingsCount, createdAt]
+      properties:
+        id: { $ref: '#/components/schemas/ObjectId' }
+        anonymousDeviceId: { type: string }
+        displayName: { type: string }
+        readingsCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+    GeoJSONBoundary:
+      oneOf:
+        - type: object
+          required: [type, coordinates]
+          properties:
+            type: { const: Polygon }
+            coordinates: { type: array, items: { type: array, items: { type: array, minItems: 2, maxItems: 3, items: { type: number } } } }
+        - type: object
+          required: [type, coordinates]
+          properties:
+            type: { const: MultiPolygon }
+            coordinates: { type: array, items: { type: array, items: { type: array, items: { type: array, minItems: 2, maxItems: 3, items: { type: number } } } } }
+    NeighborhoodInput:
+      type: object
+      required: [name, slug, city, boundary]
+      properties:
+        name: { type: string, minLength: 1 }
+        slug: { type: string, minLength: 1 }
+        city: { type: string, minLength: 1 }
+        boundary: { $ref: '#/components/schemas/GeoJSONBoundary' }
+    Neighborhood:
+      allOf:
+        - { $ref: '#/components/schemas/NeighborhoodInput' }
+        - type: object
+          required: [id]
+          properties:
+            id: { $ref: '#/components/schemas/ObjectId' }
+    NeighborhoodPage:
+      allOf:
+        - { $ref: '#/components/schemas/Page' }
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                type: object
+                required: [id, name, slug, city]
+                properties:
+                  id: { $ref: '#/components/schemas/ObjectId' }
+                  name: { type: string }
+                  slug: { type: string }
+                  city: { type: string }
+    SiteInput:
+      type: object
+      required: [name, siteType, longitude, latitude]
+      properties:
+        name: { type: string, minLength: 1 }
+        siteType: { type: string, enum: [school, hospital, kindergarten, care_home] }
+        longitude: { type: number, minimum: -180, maximum: 180 }
+        latitude: { type: number, minimum: -90, maximum: 90 }
+        protectionRadiusMeters: { type: number, minimum: 0, maximum: 100000, default: 200 }
+    SiteReplacement:
+      allOf:
+        - { $ref: '#/components/schemas/SiteInput' }
+        - type: object
+          required: [protectionRadiusMeters]
+    SensitiveSite:
+      allOf:
+        - { $ref: '#/components/schemas/SiteInput' }
+        - type: object
+          required: [id, neighborhoodId, protectionRadiusMeters]
+          properties:
+            id: { $ref: '#/components/schemas/ObjectId' }
+            neighborhoodId: { $ref: '#/components/schemas/ObjectId' }
+    SitePage:
+      allOf:
+        - { $ref: '#/components/schemas/Page' }
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/SensitiveSite' }
+    Statistics:
+      type: object
+      required: [averageDecibelLevel, maxDecibelLevel, readingsCount]
+      properties:
+        averageDecibelLevel: { type: [number, 'null'] }
+        maxDecibelLevel: { type: [number, 'null'] }
+        readingsCount: { type: integer }
+    Heatmap:
+      type: object
+      required: [from, to, neighborhoods]
+      properties:
+        from: { type: string, format: date-time }
+        to: { type: string, format: date-time }
+        neighborhoods:
+          type: array
+          items:
+            allOf:
+              - { $ref: '#/components/schemas/Statistics' }
+              - type: object
+                required: [neighborhoodId, name, boundary]
+                properties:
+                  neighborhoodId: { $ref: '#/components/schemas/ObjectId' }
+                  name: { type: string }
+                  boundary: { $ref: '#/components/schemas/GeoJSONBoundary' }
+                  hourly:
+                    type: array
+                    items:
+                      allOf:
+                        - { $ref: '#/components/schemas/Statistics' }
+                        - type: object
+                          properties:
+                            hour: { type: integer, minimum: 0, maximum: 23 }
+    Exposure:
+      allOf:
+        - { $ref: '#/components/schemas/Statistics' }
+        - type: object
+          required: [site, from, to]
+          properties:
+            site: { $ref: '#/components/schemas/SensitiveSite' }
+            from: { type: string, format: date-time }
+            to: { type: string, format: date-time }

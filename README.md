@@ -51,6 +51,8 @@ Urban noise pollution can harm residents' well-being and make it harder for citi
 
 The service routes are available without a database. The business API described in the [API design document](docs/api-and-db/api-endpoints.md) is implemented under `/api/v1` and requires a reachable MongoDB configured with `MONGODB_URI`. Set `MONGODB_DATABASE` to choose the database and `ADMIN_API_TOKEN` to enable admin routes and flagged-reading access. Admin requests use `Authorization: Bearer <token>`. See `.env.example` for local configuration.
 
+Interactive API documentation is available at `/docs`; download the OpenAPI JSON from `/openapi.json`. The source specification is [docs/openapi.yaml](docs/openapi.yaml).
+
 | HTTP Method | URL Path | Request body | Response | Description |
 | :--- | :--- | :--- | :--- | :--- |
 | `GET` | `/` | None | `200 application/json` — `{ "name": "blarescape-backend" }` | Confirms the server is responding. |
