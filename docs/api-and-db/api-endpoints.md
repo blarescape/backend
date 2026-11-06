@@ -1,8 +1,10 @@
 # SoundScape: API Endpoint Design
 
+> **Implementation status:** This document describes the planned business API. The current server does not implement any `/api/v1` business routes yet. It currently exposes only `GET /` and `GET /health`; those service routes do not use the `/api/v1` prefix. They return `200 application/json` with `{ "name": "blarescape-backend" }` and `{ "status": "ok" }`, respectively. See the [QA endpoint checklist](../qa-endpoint-checklist.md).
+
 ## 1. Conventions
 
-- **Base URL:** `/api/v1`. All paths below are relative to it.
+- **Planned business API prefix:** `/api/v1`. All business paths below are relative to it. This prefix is not currently registered in the server.
 - **Format:** JSON request and response bodies (`Content-Type: application/json`).
 - **IDs:** MongoDB `ObjectId` values, sent as 24-character hex strings.
 - **Dates:** ISO 8601 strings in UTC, for example `2026-10-23T14:05:00Z`.
@@ -19,7 +21,7 @@
   { "statusCode": 400, "error": "Bad Request", "message": "body/decibelLevel must be <= 140" }
   ```
 
-- **Access:** endpoints marked *(admin)* are meant for city planners and moderators only. The authentication method is still an open question (see section 7).
+- **Access:** endpoints marked *(admin)* are meant for city planners and moderators only. Authentication and authorization are not implemented or specified yet; the expected 401/403 behavior and contributor ownership rules remain open decisions.
 
 ## 2. Noise readings: `/metrics/noise`
 
