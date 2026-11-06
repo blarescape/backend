@@ -63,9 +63,10 @@ export function fail(statusCode: number, message: string): never {
 
 export function setApiErrorHandler(
   error: Error & { statusCode?: number; code?: number },
-  _request: FastifyRequest,
+  request: FastifyRequest,
   reply: FastifyReply,
 ): void {
+  request.log.error({ err: error }, 'API request failed');
   const statusCode = error.code === 11000 ? 409 : Number(error.statusCode) || 500;
   const messages: Record<number, string> = {
     400: 'Bad Request',
