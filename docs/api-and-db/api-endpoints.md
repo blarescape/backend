@@ -1,10 +1,10 @@
 # SoundScape: API Endpoint Design
 
-> **Implementation status:** This document describes the planned business API. The current server does not implement any `/api/v1` business routes yet. It currently exposes only `GET /` and `GET /health`; those service routes do not use the `/api/v1` prefix. They return `200 application/json` with `{ "name": "blarescape-backend" }` and `{ "status": "ok" }`, respectively. See the [QA endpoint checklist](../qa-endpoint-checklist.md).
+> **Implementation status:** All business routes in this design are implemented under `/api/v1`. They require MongoDB (`MONGODB_URI`, optional `MONGODB_DATABASE`, default `test`) and are not verified against a live database in this change. Admin routes and `includeFlagged=true` require `Authorization: Bearer <ADMIN_API_TOKEN>`. Service routes `GET /` and `GET /health` do not use the `/api/v1` prefix. See the [QA endpoint checklist](../qa-endpoint-checklist.md).
 
 ## 1. Conventions
 
-- **Planned business API prefix:** `/api/v1`. All business paths below are relative to it. This prefix is not currently registered in the server.
+- **Business API prefix:** `/api/v1`. All business paths below are relative to it.
 - **Format:** JSON request and response bodies (`Content-Type: application/json`).
 - **IDs:** MongoDB `ObjectId` values, sent as 24-character hex strings.
 - **Dates:** ISO 8601 strings in UTC, for example `2026-10-23T14:05:00Z`.
@@ -21,16 +21,16 @@
   { "statusCode": 400, "error": "Bad Request", "message": "body/decibelLevel must be <= 140" }
   ```
 
-- **Access:** endpoints marked *(admin)* are meant for city planners and moderators only. Authentication and authorization are not implemented or specified yet; the expected 401/403 behavior and contributor ownership rules remain open decisions.
+- **Access:** endpoints marked *(admin)* require a bearer token matching `ADMIN_API_TOKEN`. Contributor ownership is not implemented. If the environment variable is missing, protected requests return `503`; absent or incorrect credentials return `401`.
 
 ## 2. Noise readings: `/metrics/noise`
 
 | Method | Path | Request body / query | Success | Errors |
 | :--- | :--- | :--- | :--- | :--- |
 | `POST` | `/metrics/noise` | Body: see below | `201` created reading | `400` invalid body, `422` unknown `contributorId` |
-| `GET` | `/metrics/noise` | Query: `neighborhoodId`, `contributorId`, `from`, `to`, `includeFlagged` (default `false`), `limit`, `offset` | `200` paginated list | `400` invalid query |
+| `GET` | `/metrics/noise` | Query: `neighborhoodId`, `contributorId`, `from`, `to`, `includeFlagged` (default `false`; admin token required for `true`), `limit`, `offset` | `200` paginated list | `400` invalid query, `401` unauthorized flagged access, `503` admin token not configured |
 | `GET` | `/metrics/noise/{id}` | none | `200` reading | `404` not found |
-| `PATCH` | `/metrics/noise/{id}` *(admin)* | `{ "isFlagged": true, "noiseSource": "construction" }` (any subset) | `200` updated reading | `400`, `404` |
+| `PATCH` | `/metrics/noise/{id}` *(admin)* | `{ "isFlagged": true, "noiseSource": "construction" }` (any subset; use `null` to clear the optional source) | `200` updated reading | `400`, `401`, `404` |
 | `DELETE` | `/metrics/noise/{id}` *(admin)* | none | `204` | `404` |
 
 There is no `PUT` for readings on purpose: a measurement must not be rewritten after upload. Moderators can only flag it, correct its source category, or delete it.
@@ -84,9 +84,13 @@ There is no `PUT` for readings on purpose: a measurement must not be rewritten a
 | `POST` | `/contributors` | `{ "anonymousDeviceId": "c3f1…", "displayName": "NightOwl" }` | `201` created contributor | `400`, `409` device already registered |
 | `GET` | `/contributors/{id}` | none | `200` contributor with `readingsCount` | `404` |
 | `PATCH` | `/contributors/{id}` | `{ "displayName": "QuietStreet" }` | `200` updated contributor | `400`, `404` |
-| `DELETE` | `/contributors/{id}` | none | `204` | `404` |
+| `DELETE` | `/contributors/{id}` | none | `204` | `404`, `409` contributor still has readings |
 
 The client app registers once with `POST /contributors`, stores the returned `id`, and sends it with every reading. There is no list endpoint, so contributors cannot be enumerated.
+
+Contributors with existing readings cannot be deleted; the API returns `409` to preserve references. Deleting a reading decrements its contributor's `readingsCount`.
+
+Unknown request fields are ignored. Changing a neighborhood boundary does not automatically reassign existing readings or sensitive sites; their stored `neighborhoodId` remains as written until the record is updated.
 
 ## 4. Neighborhoods: `/neighborhoods`
 

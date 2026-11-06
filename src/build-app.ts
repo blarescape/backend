@@ -1,6 +1,8 @@
 import Fastify, { type FastifyServerOptions } from 'fastify';
 import cors from '@fastify/cors';
 import { healthRoutes } from './routes/health.js';
+import { apiRoutes } from './routes/api.js';
+import { closeDb } from './db.js';
 
 // Kept separate from src/index.ts so tests can build the app without listening.
 // Don't rename to app.ts/server.ts — Vercel treats those names as entrypoints.
@@ -13,6 +15,8 @@ export async function buildApp(opts: FastifyServerOptions = {}) {
   });
 
   await app.register(healthRoutes);
+  await app.register(apiRoutes, { prefix: '/api/v1' });
+  app.addHook('onClose', closeDb);
 
   return app;
 }

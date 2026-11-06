@@ -49,11 +49,11 @@ Urban noise pollution can harm residents' well-being and make it harder for citi
 
 ## API Reference Guide
 
-The current server exposes these endpoints. The noise collection and analytics endpoints in the [API design document](docs/api-and-db/api-endpoints.md) are planned and are not implemented yet.
+The service routes are available without a database. The business API described in the [API design document](docs/api-and-db/api-endpoints.md) is implemented under `/api/v1` and requires a reachable MongoDB configured with `MONGODB_URI`. Set `MONGODB_DATABASE` to choose the database and `ADMIN_API_TOKEN` to enable admin routes and flagged-reading access. Admin requests use `Authorization: Bearer <token>`. See `.env.example` for local configuration.
 
 | HTTP Method | URL Path | Request body | Response | Description |
 | :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/` | None | `200 text/plain` — `Hello World!` | Confirms the server is responding. |
+| `GET` | `/` | None | `200 application/json` — `{ "name": "blarescape-backend" }` | Confirms the server is responding. |
 | `GET` | `/health` | None | `200 application/json` — `{ "status": "ok" }` | Reports service health. |
 
 ### Error responses
