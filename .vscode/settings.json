@@ -1,3 +1,7 @@
 {
-    "js/ts.tsdk.path": "node_modules\\typescript"
+    "js/ts.tsdk.path": "node_modules\\typescript",
+    "[typescript]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "oxc.oxc-vscode",
+    }
 }

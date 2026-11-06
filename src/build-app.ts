@@ -1,11 +1,13 @@
-import Fastify, { type FastifyServerOptions } from 'fastify';
-import cors from '@fastify/cors';
-import swagger from '@fastify/swagger';
-import swaggerUi from '@fastify/swagger-ui';
-import { resolve } from 'node:path';
-import { healthRoutes } from './routes/health.js';
-import { apiRoutes } from './routes/api.js';
-import { closeDb } from './db.js';
+import { resolve } from "node:path";
+
+import cors from "@fastify/cors";
+import swagger from "@fastify/swagger";
+import swaggerUi from "@fastify/swagger-ui";
+import Fastify, { type FastifyServerOptions } from "fastify";
+
+import { closeDb } from "./db.js";
+import { apiRoutes } from "./routes/api.js";
+import { healthRoutes } from "./routes/health.js";
 
 // Kept separate from src/index.ts so tests can build the app without listening.
 // Don't rename to app.ts/server.ts — Vercel treats those names as entrypoints.
@@ -14,24 +16,24 @@ export async function buildApp(opts: FastifyServerOptions = {}) {
 
   const corsOrigin = process.env.CORS_ORIGIN;
   await app.register(cors, {
-    origin: corsOrigin ? corsOrigin.split(',').map((o) => o.trim()) : false,
+    origin: corsOrigin ? corsOrigin.split(",").map((o) => o.trim()) : false,
   });
 
   await app.register(swagger, {
-    mode: 'static',
+    mode: "static",
     specification: {
-      path: resolve(process.cwd(), 'docs/openapi.yaml'),
-      baseDir: resolve(process.cwd(), 'docs'),
+      path: resolve(process.cwd(), "docs/openapi.yaml"),
+      baseDir: resolve(process.cwd(), "docs"),
     },
   });
   await app.register(swaggerUi, {
-    routePrefix: '/docs',
+    routePrefix: "/docs",
   });
 
-  app.get('/openapi.json', async () => app.swagger());
+  app.get("/openapi.json", async () => app.swagger());
   await app.register(healthRoutes);
-  await app.register(apiRoutes, { prefix: '/api/v1' });
-  app.addHook('onClose', closeDb);
+  await app.register(apiRoutes, { prefix: "/api/v1" });
+  app.addHook("onClose", closeDb);
 
   return app;
 }

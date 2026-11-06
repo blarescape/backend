@@ -11,7 +11,9 @@
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "lint": "oxlint src --fix",
+    "format": "oxfmt src"
   },
   "dependencies": {
     "@fastify/cors": "^11.4.1",

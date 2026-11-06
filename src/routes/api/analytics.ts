@@ -1,6 +1,7 @@
-import type { FastifyPluginAsync } from 'fastify';
-import type { WithId } from 'mongodb';
-import { getDb } from '../../db.js';
+import type { FastifyPluginAsync } from "fastify";
+import type { WithId } from "mongodb";
+
+import { getDb } from "../../db.js";
 import {
   type Neighborhood,
   type Reading,
@@ -11,29 +12,28 @@ import {
   parseId,
   requiredString,
   siteResponse,
-} from './shared.js';
+} from "./shared.js";
 
 export const analyticsRoutes: FastifyPluginAsync = async (app) => {
-  app.get('/analytics/heatmap', async (request) => {
+  app.get("/analytics/heatmap", async (request) => {
     const query = request.query as Record<string, unknown>;
     const { from, to } = dateRange(query.from, query.to);
-    const groupBy = query.groupBy ?? 'none';
-    if (groupBy !== 'none' && groupBy !== 'hourOfDay') {
-      fail(400, 'groupBy must be none or hourOfDay');
+    const groupBy = query.groupBy ?? "none";
+    if (groupBy !== "none" && groupBy !== "hourOfDay") {
+      fail(400, "groupBy must be none or hourOfDay");
     }
 
     const database = await getDb();
-    const neighborhoodFilter = query.city === undefined
-      ? {}
-      : { city: requiredString(query.city, 'city') };
+    const neighborhoodFilter =
+      query.city === undefined ? {} : { city: requiredString(query.city, "city") };
     const [neighborhoods, readings] = await Promise.all([
       database
-        .collection<Neighborhood>('neighborhoods')
+        .collection<Neighborhood>("neighborhoods")
         .find(neighborhoodFilter)
         .sort({ city: 1, name: 1 })
         .toArray(),
       database
-        .collection<Reading>('noise_readings')
+        .collection<Reading>("noise_readings")
         .find({
           recordedAt: { $gte: from, $lte: to },
           isFlagged: false,
@@ -49,35 +49,36 @@ export const analyticsRoutes: FastifyPluginAsync = async (app) => {
         const matchingReadings = readings.filter((reading) =>
           reading.neighborhoodId?.equals(neighborhood._id),
         );
-        const hourly = groupBy === 'hourOfDay'
-          ? createHourlyBreakdown(matchingReadings)
-          : undefined;
+        const hourly =
+          groupBy === "hourOfDay" ? createHourlyBreakdown(matchingReadings) : undefined;
 
-        return {
-          neighborhoodId: neighborhood._id.toHexString(),
-          name: neighborhood.name,
-          boundary: neighborhood.boundary,
-          ...logarithmicStatistics(matchingReadings),
-          ...(hourly ? { hourly } : {}),
-        };
+        return Object.assign(
+          {
+            neighborhoodId: neighborhood._id.toHexString(),
+            name: neighborhood.name,
+            boundary: neighborhood.boundary,
+          },
+          logarithmicStatistics(matchingReadings),
+          hourly ? { hourly } : {},
+        );
       }),
     };
   });
 
   app.get<{ Params: { id: string } }>(
-    '/analytics/sensitive-sites/:id/exposure',
+    "/analytics/sensitive-sites/:id/exposure",
     async (request) => {
       const query = request.query as Record<string, unknown>;
       const { from, to } = dateRange(query.from, query.to);
       const database = await getDb();
       const site = await database
-        .collection<Site>('sensitive_sites')
+        .collection<Site>("sensitive_sites")
         .findOne({ _id: parseId(request.params.id) });
 
-      if (!site) fail(404, 'Sensitive site not found');
+      if (!site) fail(404, "Sensitive site not found");
       const [longitude, latitude] = site.location.coordinates;
       const readings = await database
-        .collection<Reading>('noise_readings')
+        .collection<Reading>("noise_readings")
         .find({
           recordedAt: { $gte: from, $lte: to },
           isFlagged: false,
@@ -103,9 +104,9 @@ export const analyticsRoutes: FastifyPluginAsync = async (app) => {
 };
 
 function dateRange(fromValue: unknown, toValue: unknown) {
-  const from = parseDate(fromValue, 'from');
-  const to = parseDate(toValue, 'to');
-  if (from > to) fail(400, 'from must be earlier than or equal to to');
+  const from = parseDate(fromValue, "from");
+  const to = parseDate(toValue, "to");
+  if (from > to) fail(400, "from must be earlier than or equal to to");
   return { from, to };
 }
 
@@ -120,5 +121,5 @@ function createHourlyBreakdown(readings: WithId<Reading>[]) {
 
   return [...groups.entries()]
     .sort(([hourA], [hourB]) => hourA - hourB)
-    .map(([hour, group]) => ({ hour, ...logarithmicStatistics(group) }));
+    .map(([hour, group]) => Object.assign({ hour }, logarithmicStatistics(group)));
 }
