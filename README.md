@@ -12,9 +12,11 @@ Urban noise pollution can harm residents' well-being and make it harder for citi
 - **Web framework:** Fastify 5
 - **Database:** MongoDB; the data model is documented in [the database schema](docs/api-and-db/database-schema.md).
 - **Production dependencies:**
-  - `fastify` (^5.12.7) — HTTP server and routing.
-  - `@fastify/cors` (^11.3.1) — configurable cross-origin request handling.
-- **Development dependencies:** `tsx` for running TypeScript, `typescript` for type checking, and `vitest` for tests.
+- `fastify` (^5.12.8) — HTTP server and routing.
+- `@fastify/cors` (^11.4.1) — configurable cross-origin request handling.
+- `mongodb` (^7.8.0) — official MongoDB driver.
+- `@fastify/swagger` (^9.9.3) and `@fastify/swagger-ui` (^6.1.3) — OpenAPI specification and interactive `/docs` UI.
+- **Development dependencies:** `tsx` for running TypeScript, `typescript` for type checking, `vitest` for tests, `oxlint` for linting, `oxfmt` for formatting, `pino-pretty` for pretty-printing logs, and `@types/node` for Node.js type definitions.
 
 ## Installation & Setup
 
@@ -44,8 +46,7 @@ Urban noise pollution can harm residents' well-being and make it harder for citi
    ```bash
    npm run dev
    ```
-
-   Open `http://localhost:3000/` to see the greeting. Run `npm start` to start without watch mode.
+  Open `http://localhost:3000/` to see the greeting. Run `npm start` to start without watch mode (note: unlike `npm run dev`, `npm start` does not load `.env` automatically and expects environment variables to be set in the environment). You can also run `npm run typecheck`, `npm test` (or `npm run test:watch`), `npm run   lint`, and `npm run format` during development.
 
 ## API Reference Guide
 
