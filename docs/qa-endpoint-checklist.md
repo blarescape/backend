@@ -8,6 +8,7 @@ This is a test plan, not an execution report. Service routes and the 21 business
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | S01 | GET | `/` | Public | 200 | None | JSON `{ "name": "blarescape-backend" }` | Implemented; existing automated test |
 | S02 | GET | `/health` | Public | 200 | None | JSON `{ "status": "ok" }` | Implemented; existing automated test |
+| S03 | GET | `/ready` | Public | 200, 503 | None | Reachable database returns `{ "status": "ready" }`; unset `MONGODB_URI`, unreachable MongoDB or a failed connection return 503 `{ "status": "unavailable" }` | Implemented |
 | N01 | POST | `/api/v1/metrics/noise` | Public | 201 | 400, 422 | Required fields; coordinate/dB boundaries; existing contributor; generated ID and receivedAt; default isFlagged=false; resolved neighborhood or null | Implemented; verified |
 | N02 | GET | `/api/v1/metrics/noise` | Public; Admin for includeFlagged=true | 200 | 400, 401 | Filters: neighborhoodId, contributorId, from, to, includeFlagged; pagination; flagged readings excluded by default | Implemented; verified |
 | N03 | GET | `/api/v1/metrics/noise/{id}` | Public | 200 | 400, 404 | Read back created reading; unknown valid ID | Implemented; verified |
@@ -54,7 +55,7 @@ Run service smoke checks, create fixtures, test reads/filters, updates, analytic
 
 ## Contract decisions
 
-Authentication uses a shared bearer token from `ADMIN_API_TOKEN`; contributor ownership is not implemented. Contributor deletion returns 409 while readings exist. The implementation uses 30 seconds of future clock tolerance, inclusive date range boundaries, rejects pagination outside its documented limits, and sorts lists deterministically. Protection radius defaults to 200 meters; radius boundary points are included. Overlapping neighborhood resolution uses the first matching document returned by MongoDB, so deployments should ensure boundaries do not overlap. Analytics currently use an unweighted logarithmic average. The exposure response contains `site`, `from`, `to`, `averageDecibelLevel`, `maxDecibelLevel`, and `readingsCount` (statistics are null/zero when no readings match).
+Authentication uses a shared bearer token from `ADMIN_API_TOKEN`; contributor ownership is not implemented. Contributor deletion returns 409 while readings exist. `/health` is a liveness probe and stays dependency-free; `/ready` pings MongoDB and returns 503 when the database is unreachable or not configured. The implementation uses 30 seconds of future clock tolerance, inclusive date range boundaries, rejects pagination outside its documented limits, and sorts lists deterministically. Protection radius defaults to 200 meters; radius boundary points are included. Overlapping neighborhood resolution uses the first matching document returned by MongoDB, so deployments should ensure boundaries do not overlap. Analytics currently use an unweighted logarithmic average, computed per hour in UTC and merged per neighborhood. The exposure response contains `site`, `from`, `to`, `averageDecibelLevel`, `maxDecibelLevel`, and `readingsCount` (statistics are null/zero when no readings match).
 
 ## Execution record template
 
