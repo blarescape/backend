@@ -46,7 +46,7 @@ Urban noise pollution can harm residents' well-being and make it harder for citi
    ```bash
    npm run dev
    ```
-  Open `http://localhost:3000/` to see the greeting. Run `npm start` to start without watch mode (note: unlike `npm run dev`, `npm start` does not load `.env` automatically and expects environment variables to be set in the environment). You can also run `npm run typecheck`, `npm test` (or `npm run test:watch`), `npm run   lint`, and `npm run format` during development.
+  Open `http://localhost:3000/` to see the greeting. Run `npm start` to start without watch mode (note: unlike `npm run dev`, `npm start` does not load `.env` automatically and expects environment variables to be set in the environment). You can also run `npm run typecheck`, `npm test` (or `npm run test:watch`), `npm run lint`, and `npm run format` during development.
 
 ## API Reference Guide
 
