@@ -107,7 +107,7 @@ export const noiseRoutes: FastifyPluginAsync = async (app) => {
       fail(400, "includeFlagged must be true or false");
     }
 
-    if (query.includeFlagged === "true") requireAdmin(request);
+    if (query.includeFlagged === "true") await requireAdmin(request);
     else filter.isFlagged = false;
 
     const readings = (await getDb()).collection<Reading>("noise_readings");

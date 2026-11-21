@@ -220,7 +220,9 @@ export function paginated<T>(items: T[], total: number, limit: number, offset: n
   return { items, total, limit, offset };
 }
 
-export function requireAdmin(request: FastifyRequest): void {
+// Must remain async: as a route preHandler, a sync hook that returns normally
+// never calls Fastify's done(), so the request lifecycle stalls.
+export async function requireAdmin(request: FastifyRequest): Promise<void> {
   const token = process.env.ADMIN_API_TOKEN;
   if (!token) fail(503, "ADMIN_API_TOKEN is not configured");
   if (request.headers.authorization !== `Bearer ${token}`) {
