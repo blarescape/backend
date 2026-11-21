@@ -1,6 +1,6 @@
 # QA: Endpoint Checklist and Path Matrix
 
-This is a test plan, not an execution report. Service routes and the 21 business routes below are implemented. Business routes use `/api/v1`; service routes do not. `Implemented; not verified` means code exists, not that runtime checks have passed. Business routes require MongoDB configured with `MONGODB_URI` and `MONGODB_DATABASE`. Routes marked Admin require `Authorization: Bearer <ADMIN_API_TOKEN>`.
+This is a test plan, not an execution report. Service routes and the 21 business routes below are implemented. Business routes use `/api/v1`; service routes do not. Business routes require MongoDB configured with `MONGODB_URI` and `MONGODB_DATABASE`. Routes marked Admin require `Authorization: Bearer <ADMIN_API_TOKEN>`.
 
 ## Endpoint matrix
 
@@ -8,27 +8,27 @@ This is a test plan, not an execution report. Service routes and the 21 business
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | S01 | GET | `/` | Public | 200 | None | JSON `{ "name": "blarescape-backend" }` | Implemented; existing automated test |
 | S02 | GET | `/health` | Public | 200 | None | JSON `{ "status": "ok" }` | Implemented; existing automated test |
-| N01 | POST | `/api/v1/metrics/noise` | Public | 201 | 400, 422 | Required fields; coordinate/dB boundaries; existing contributor; generated ID and receivedAt; default isFlagged=false; resolved neighborhood or null | Implemented; not verified |
-| N02 | GET | `/api/v1/metrics/noise` | Public; Admin for includeFlagged=true | 200 | 400, 401 | Filters: neighborhoodId, contributorId, from, to, includeFlagged; pagination; flagged readings excluded by default | Implemented; not verified |
-| N03 | GET | `/api/v1/metrics/noise/{id}` | Public | 200 | 400, 404 | Read back created reading; unknown valid ID | Implemented; not verified |
-| N04 | PATCH | `/api/v1/metrics/noise/{id}` | Admin | 200 | 400, 401, 404 | Update isFlagged and/or noiseSource; untouched fields preserved; measurement fields cannot be rewritten | Implemented; not verified |
-| N05 | DELETE | `/api/v1/metrics/noise/{id}` | Admin | 204 | 400, 401, 404 | Empty response; subsequent GET returns 404; repeated DELETE returns 404; contributor count decremented | Implemented; not verified |
-| C01 | POST | `/api/v1/contributors` | Public | 201 | 400, 409 | Required anonymousDeviceId; optional displayName; duplicate device; initial readingsCount=0 | Implemented; not verified |
-| C02 | GET | `/api/v1/contributors/{id}` | Public | 200 | 400, 404 | Correct contributor and readingsCount; unknown valid ID | Implemented; not verified |
-| C03 | PATCH | `/api/v1/contributors/{id}` | Public | 200 | 400, 404 | Update displayName; preserve other fields; invalid body; unknown valid ID | Implemented; not verified |
-| C04 | DELETE | `/api/v1/contributors/{id}` | Public | 204 | 400, 404, 409 | Empty response; subsequent GET returns 404; reject deletion while readings reference contributor | Implemented; not verified |
-| B01 | POST | `/api/v1/neighborhoods` | Admin | 201 | 400, 401, 409 | Required name, slug, city, boundary; valid GeoJSON; duplicate slug | Implemented; not verified |
-| B02 | GET | `/api/v1/neighborhoods` | Public | 200 | 400 | City filter; pagination; boundary omitted; empty result | Implemented; not verified |
-| B03 | GET | `/api/v1/neighborhoods/{id}` | Public | 200 | 400, 404 | Boundary included; unknown valid ID | Implemented; not verified |
-| B04 | PUT | `/api/v1/neighborhoods/{id}` | Admin | 200 | 400, 401, 404, 409 | Full replacement; invalid/missing fields; invalid GeoJSON; duplicate slug; unknown valid ID | Implemented; not verified |
-| B05 | DELETE | `/api/v1/neighborhoods/{id}` | Admin | 204 | 400, 401, 404, 409 | Delete unreferenced neighborhood; reject when readings or sites reference it; unknown valid ID | Implemented; not verified |
-| T01 | POST | `/api/v1/sensitive-sites` | Admin | 201 | 400, 401, 422 | Required fields; siteType enum; coordinates; server resolves neighborhoodId; outside all neighborhoods | Implemented; not verified |
-| T02 | GET | `/api/v1/sensitive-sites` | Public | 200 | 400 | neighborhoodId and siteType filters separately/together; pagination; invalid query | Implemented; not verified |
-| T03 | GET | `/api/v1/sensitive-sites/{id}` | Public | 200 | 400, 404 | Correct site; unknown valid ID | Implemented; not verified |
-| T04 | PUT | `/api/v1/sensitive-sites/{id}` | Admin | 200 | 400, 401, 404, 422 | Full replacement; invalid fields; move inside/outside neighborhoods; unknown valid ID | Implemented; not verified |
-| T05 | DELETE | `/api/v1/sensitive-sites/{id}` | Admin | 204 | 400, 401, 404 | Empty response; subsequent GET returns 404; repeated DELETE returns 404 | Implemented; not verified |
-| A01 | GET | `/api/v1/analytics/heatmap` | Public | 200 | 400 | Required from/to; reversed range; city filter; groupBy=none/hourOfDay; UTC hours; unflagged readings only; logarithmic average | Implemented; not verified |
-| A02 | GET | `/api/v1/analytics/sensitive-sites/{id}/exposure` | Public | 200 | 400, 404 | Required from/to; invalid/reversed range; unknown site; protection radius; unflagged readings only; logarithmic statistics | Implemented; not verified |
+| N01 | POST | `/api/v1/metrics/noise` | Public | 201 | 400, 422 | Required fields; coordinate/dB boundaries; existing contributor; generated ID and receivedAt; default isFlagged=false; resolved neighborhood or null | Implemented; verified |
+| N02 | GET | `/api/v1/metrics/noise` | Public; Admin for includeFlagged=true | 200 | 400, 401 | Filters: neighborhoodId, contributorId, from, to, includeFlagged; pagination; flagged readings excluded by default | Implemented; verified |
+| N03 | GET | `/api/v1/metrics/noise/{id}` | Public | 200 | 400, 404 | Read back created reading; unknown valid ID | Implemented; verified |
+| N04 | PATCH | `/api/v1/metrics/noise/{id}` | Admin | 200 | 400, 401, 404 | Update isFlagged and/or noiseSource; untouched fields preserved; measurement fields cannot be rewritten | Implemented; verified |
+| N05 | DELETE | `/api/v1/metrics/noise/{id}` | Admin | 204 | 400, 401, 404 | Empty response; subsequent GET returns 404; repeated DELETE returns 404; contributor count decremented | Implemented; verified |
+| C01 | POST | `/api/v1/contributors` | Public | 201 | 400, 409 | Required anonymousDeviceId; optional displayName; duplicate device; initial readingsCount=0 | Implemented; verified |
+| C02 | GET | `/api/v1/contributors/{id}` | Public | 200 | 400, 404 | Correct contributor and readingsCount; unknown valid ID | Implemented; verified |
+| C03 | PATCH | `/api/v1/contributors/{id}` | Public | 200 | 400, 404 | Update displayName; preserve other fields; invalid body; unknown valid ID | Implemented; verified |
+| C04 | DELETE | `/api/v1/contributors/{id}` | Public | 204 | 400, 404, 409 | Empty response; subsequent GET returns 404; reject deletion while readings reference contributor | Implemented; verified |
+| B01 | POST | `/api/v1/neighborhoods` | Admin | 201 | 400, 401, 409 | Required name, slug, city, boundary; valid GeoJSON; duplicate slug | Implemented; verified |
+| B02 | GET | `/api/v1/neighborhoods` | Public | 200 | 400 | City filter; pagination; boundary omitted; empty result | Implemented; verified |
+| B03 | GET | `/api/v1/neighborhoods/{id}` | Public | 200 | 400, 404 | Boundary included; unknown valid ID | Implemented; verified |
+| B04 | PUT | `/api/v1/neighborhoods/{id}` | Admin | 200 | 400, 401, 404, 409 | Full replacement; invalid/missing fields; invalid GeoJSON; duplicate slug; unknown valid ID | Implemented; verified |
+| B05 | DELETE | `/api/v1/neighborhoods/{id}` | Admin | 204 | 400, 401, 404, 409 | Delete unreferenced neighborhood; reject when readings or sites reference it; unknown valid ID | Implemented; verified |
+| T01 | POST | `/api/v1/sensitive-sites` | Admin | 201 | 400, 401, 422 | Required fields; siteType enum; coordinates; server resolves neighborhoodId; outside all neighborhoods | Implemented; verified |
+| T02 | GET | `/api/v1/sensitive-sites` | Public | 200 | 400 | neighborhoodId and siteType filters separately/together; pagination; invalid query | Implemented; verified |
+| T03 | GET | `/api/v1/sensitive-sites/{id}` | Public | 200 | 400, 404 | Correct site; unknown valid ID | Implemented; verified |
+| T04 | PUT | `/api/v1/sensitive-sites/{id}` | Admin | 200 | 400, 401, 404, 422 | Full replacement; invalid fields; move inside/outside neighborhoods; unknown valid ID | Implemented; verified |
+| T05 | DELETE | `/api/v1/sensitive-sites/{id}` | Admin | 204 | 400, 401, 404 | Empty response; subsequent GET returns 404; repeated DELETE returns 404 | Implemented; verified |
+| A01 | GET | `/api/v1/analytics/heatmap` | Public | 200 | 400 | Required from/to; reversed range; city filter; groupBy=none/hourOfDay; UTC hours; unflagged readings only; logarithmic average | Implemented; verified |
+| A02 | GET | `/api/v1/analytics/sensitive-sites/{id}/exposure` | Public | 200 | 400, 404 | Required from/to; invalid/reversed range; unknown site; protection radius; unflagged readings only; logarithmic statistics | Implemented; verified |
 
 ## Shared checklist
 
