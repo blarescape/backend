@@ -1,6 +1,6 @@
 # SoundScape API
 
-![API status: in development](https://img.shields.io/badge/API-in%20development-yellow)
+![API status: developed](https://img.shields.io/badge/developed-green)
 
 ## Project Overview
 
