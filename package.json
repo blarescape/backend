@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
+    "mongodb-memory-server": "^11.3.0",
     "oxfmt": "^0.77.0",
     "oxlint": "^1.92.0",
     "oxlint-tsgolint": "^7.0.2006",

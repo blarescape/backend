@@ -8,7 +8,7 @@ This is a test plan, not an execution report. Service routes and the 21 business
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | S01 | GET | `/` | Public | 200 | None | JSON `{ "name": "blarescape-backend" }` | Implemented; existing automated test |
 | S02 | GET | `/health` | Public | 200 | None | JSON `{ "status": "ok" }` | Implemented; existing automated test |
-| S03 | GET | `/ready` | Public | 200, 503 | None | Reachable database returns `{ "status": "ready" }`; unset `MONGODB_URI`, unreachable MongoDB or a failed connection return 503 `{ "status": "unavailable" }` | Implemented |
+| S03 | GET | `/ready` | Public | 200, 503 | None | Reachable database returns `{ "status": "ready" }`; unset `MONGODB_URI`, unreachable MongoDB or a failed connection return 503 `{ "status": "unavailable" }` | Implemented; existing automated test |
 | N01 | POST | `/api/v1/metrics/noise` | Public | 201 | 400, 422 | Required fields; coordinate/dB boundaries; existing contributor; generated ID and receivedAt; default isFlagged=false; resolved neighborhood or null | Implemented; verified |
 | N02 | GET | `/api/v1/metrics/noise` | Public; Admin for includeFlagged=true | 200 | 400, 401 | Filters: neighborhoodId, contributorId, from, to, includeFlagged; pagination; flagged readings excluded by default | Implemented; verified |
 | N03 | GET | `/api/v1/metrics/noise/{id}` | Public | 200 | 400, 404 | Read back created reading; unknown valid ID | Implemented; verified |
