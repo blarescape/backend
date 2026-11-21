@@ -11,31 +11,38 @@ export function getDb(): Promise<Db> {
     });
   if (!connection) {
     client = new MongoClient(uri);
-    connection = client.connect().then(async (connected) => {
-      const db = connected.db(process.env.MONGODB_DATABASE);
-      await Promise.all([
-        db
-          .collection("contributors")
-          .createIndexes([{ key: { anonymousDeviceId: 1 }, unique: true }]),
-        db
-          .collection("neighborhoods")
-          .createIndexes([
-            { key: { slug: 1 }, unique: true },
-            { key: { boundary: "2dsphere" } },
-          ]),
-        db
-          .collection("noise_readings")
-          .createIndexes([
-            { key: { location: "2dsphere" } },
-            { key: { neighborhoodId: 1, recordedAt: 1 } },
-            { key: { contributorId: 1, recordedAt: -1 } },
-          ]),
-        db
-          .collection("sensitive_sites")
-          .createIndexes([{ key: { location: "2dsphere" } }]),
-      ]);
-      return db;
-    });
+    connection = client
+      .connect()
+      .then(async (connected) => {
+        const db = connected.db(process.env.MONGODB_DATABASE);
+        await Promise.all([
+          db
+            .collection("contributors")
+            .createIndexes([{ key: { anonymousDeviceId: 1 }, unique: true }]),
+          db
+            .collection("neighborhoods")
+            .createIndexes([
+              { key: { slug: 1 }, unique: true },
+              { key: { boundary: "2dsphere" } },
+            ]),
+          db
+            .collection("noise_readings")
+            .createIndexes([
+              { key: { location: "2dsphere" } },
+              { key: { neighborhoodId: 1, recordedAt: 1 } },
+              { key: { contributorId: 1, recordedAt: -1 } },
+            ]),
+          db
+            .collection("sensitive_sites")
+            .createIndexes([{ key: { location: "2dsphere" } }]),
+        ]);
+        return db;
+      })
+      .catch((err: unknown) => {
+        client = undefined;
+        connection = undefined;
+        throw err;
+      });
   }
   return connection;
 }
