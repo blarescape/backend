@@ -31,7 +31,7 @@
 | `GET` | `/metrics/noise` | Query: `neighborhoodId`, `contributorId`, `from`, `to`, `includeFlagged` (default `false`; admin token required for `true`), `limit`, `offset` | `200` paginated list | `400` invalid query, `401` unauthorized flagged access, `503` admin token not configured |
 | `GET` | `/metrics/noise/{id}` | none | `200` reading | `404` not found |
 | `PATCH` | `/metrics/noise/{id}` *(admin)* | `{ "isFlagged": true, "noiseSource": "construction" }` (any subset; use `null` to clear the optional source) | `200` updated reading | `400`, `401`, `404` |
-| `DELETE` | `/metrics/noise/{id}` *(admin)* | none | `204` | `404` |
+| `DELETE` | `/metrics/noise/{id}` *(admin)* | none | `204` | `401`, `404` |
 
 There is no `PUT` for readings on purpose: a measurement must not be rewritten after upload. Moderators can only flag it, correct its source category, or delete it.
 
@@ -83,7 +83,7 @@ There is no `PUT` for readings on purpose: a measurement must not be rewritten a
 | :--- | :--- | :--- | :--- | :--- |
 | `POST` | `/contributors` | `{ "anonymousDeviceId": "c3f1…", "displayName": "NightOwl" }` | `201` created contributor | `400`, `409` device already registered |
 | `GET` | `/contributors/{id}` | none | `200` contributor with `readingsCount` | `404` |
-| `PATCH` | `/contributors/{id}` | `{ "displayName": "QuietStreet" }` | `200` updated contributor | `400`, `404` |
+| `PATCH` | `/contributors/{id}` | `{ "displayName": "QuietStreet" }` (use null to clear displayName) | `200` updated contributor | `400`, `404` |
 | `DELETE` | `/contributors/{id}` | none | `204` | `404`, `409` contributor still has readings |
 
 The client app registers once with `POST /contributors`, stores the returned `id`, and sends it with every reading. There is no list endpoint, so contributors cannot be enumerated.
@@ -96,11 +96,11 @@ Unknown request fields are ignored. Changing a neighborhood boundary does not au
 
 | Method | Path | Request body / query | Success | Errors |
 | :--- | :--- | :--- | :--- | :--- |
-| `POST` | `/neighborhoods` *(admin)* | `{ "name": "Stare Miasto", "slug": "stare-miasto", "city": "Kraków", "boundary": { "type": "Polygon", "coordinates": [[[19.93, 50.06], …]] } }` | `201` | `400` invalid GeoJSON, `409` duplicate `slug` |
+| `POST` | `/neighborhoods` *(admin)* | `{ "name": "Stare Miasto", "slug": "stare-miasto", "city": "Kraków", "boundary": { "type": "Polygon", "coordinates": [[[19.93, 50.06], …]] } }` | `201` | `400` invalid GeoJSON, `401`, `409` duplicate `slug` |
 | `GET` | `/neighborhoods` | Query: `city`, `limit`, `offset` | `200` paginated list (without `boundary`) | `400` |
 | `GET` | `/neighborhoods/{id}` | none | `200` neighborhood with `boundary` | `404` |
-| `PUT` | `/neighborhoods/{id}` *(admin)* | Full neighborhood object | `200` | `400`, `404`, `409` |
-| `DELETE` | `/neighborhoods/{id}` *(admin)* | none | `204` | `404`, `409` readings or sites still reference it |
+| `PUT` | `/neighborhoods/{id}` *(admin)* | Full neighborhood object | `200` | `400`, `401`, `404`, `409` |
+| `DELETE` | `/neighborhoods/{id}` *(admin)* | none | `204` | `401`, `404`, `409` readings or sites still reference it |
 
 The list endpoint leaves out `boundary` because polygons are large. Clients fetch a single neighborhood or the heatmap when they need the shape.
 
@@ -108,11 +108,11 @@ The list endpoint leaves out `boundary` because polygons are large. Clients fetc
 
 | Method | Path | Request body / query | Success | Errors |
 | :--- | :--- | :--- | :--- | :--- |
-| `POST` | `/sensitive-sites` *(admin)* | `{ "name": "Szpital Uniwersytecki", "siteType": "hospital", "longitude": 19.95, "latitude": 50.07, "protectionRadiusMeters": 300 }` | `201` (server resolves `neighborhoodId`) | `400`, `422` location outside every neighborhood |
+| `POST` | `/sensitive-sites` *(admin)* | `{ "name": "Szpital Uniwersytecki", "siteType": "hospital", "longitude": 19.95, "latitude": 50.07, "protectionRadiusMeters": 300 }` (`protectionRadiusMeters` is optional, defaults to `200`) | `201` (server resolves `neighborhoodId`) | `400`, `401`, `422` location outside every neighborhood |
 | `GET` | `/sensitive-sites` | Query: `neighborhoodId`, `siteType`, `limit`, `offset` | `200` paginated list | `400` |
 | `GET` | `/sensitive-sites/{id}` | none | `200` | `404` |
-| `PUT` | `/sensitive-sites/{id}` *(admin)* | Full site object | `200` | `400`, `404`, `422` |
-| `DELETE` | `/sensitive-sites/{id}` *(admin)* | none | `204` | `404` |
+| `PUT` | `/sensitive-sites/{id}` *(admin)* | Full site object (`protectionRadiusMeters` is required) | `200` | `400`, `401`, `404`, `422` |
+| `DELETE` | `/sensitive-sites/{id}` *(admin)* | none | `204` | `401`, `404` |
 
 ## 6. Analytics: `/analytics`
 
@@ -142,6 +142,6 @@ These endpoints are read-only. They aggregate unflagged readings and return aver
 }
 ```
 
-With `groupBy=hourOfDay`, each neighborhood also contains `"hourly": [{ "hour": 0, "averageDecibelLevel": 51.3, "readingsCount": 40 }, …]`. Hours are in UTC.
+With `groupBy=hourOfDay`, each neighborhood also contains `"hourly": [{ "hour": 0, "averageDecibelLevel": 51.3, "maxDecibelLevel": 64.2, "readingsCount": 40 }, …]`. Hours are in UTC.
 
 The exposure endpoint returns the same statistics for readings inside the site's `protectionRadiusMeters`. It gives planners a direct answer to "how loud is it around this school?".
