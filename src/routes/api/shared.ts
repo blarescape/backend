@@ -280,8 +280,8 @@ export function readingResponse(doc: WithId<Reading>) {
   };
 }
 
-export function logarithmicStatistics(rows: WithId<Reading>[]) {
-  if (rows.length === 0) {
+export function statsFromTotals(count: number, maxDecibelLevel: number, energy: number) {
+  if (count === 0) {
     return {
       averageDecibelLevel: null,
       maxDecibelLevel: null,
@@ -289,12 +289,20 @@ export function logarithmicStatistics(rows: WithId<Reading>[]) {
     };
   }
 
-  const energyMean =
-    rows.reduce((sum, row) => sum + 10 ** (row.decibelLevel / 10), 0) / rows.length;
-
   return {
-    averageDecibelLevel: Number((10 * Math.log10(energyMean)).toFixed(2)),
-    maxDecibelLevel: Math.max(...rows.map((row) => row.decibelLevel)),
-    readingsCount: rows.length,
+    averageDecibelLevel: Number((10 * Math.log10(energy / count)).toFixed(2)),
+    maxDecibelLevel,
+    readingsCount: count,
   };
+}
+
+export function logarithmicStatistics(rows: WithId<Reading>[]) {
+  let energy = 0;
+  let maxDecibelLevel = -Infinity;
+  for (const row of rows) {
+    energy += 10 ** (row.decibelLevel / 10);
+    maxDecibelLevel = Math.max(maxDecibelLevel, row.decibelLevel);
+  }
+
+  return statsFromTotals(rows.length, maxDecibelLevel, energy);
 }
