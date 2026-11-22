@@ -16,7 +16,7 @@ Urban noise pollution can harm residents' well-being and make it harder for citi
 - `@fastify/cors` (^11.4.1) — configurable cross-origin request handling.
 - `mongodb` (^7.8.0) — official MongoDB driver.
 - `@fastify/swagger` (^9.9.3) and `@fastify/swagger-ui` (^6.1.3) — OpenAPI specification and interactive `/docs` UI.
-- **Development dependencies:** `tsx` for running TypeScript, `typescript` for type checking, `vitest` for tests, `oxlint` for linting, `oxfmt` for formatting, `pino-pretty` for pretty-printing logs, and `@types/node` for Node.js type definitions.
+- **Development dependencies:** `tsx` for running TypeScript, `typescript` for type checking, `vitest` and `mongodb-memory-server` for integration tests, `oxlint` for linting, `oxfmt` for formatting, `pino-pretty` for pretty-printing logs, and `@types/node` for Node.js type definitions.
 
 ## Installation & Setup
 
@@ -46,11 +46,11 @@ Urban noise pollution can harm residents' well-being and make it harder for citi
    ```bash
    npm run dev
    ```
-  Open `http://localhost:3000/` to see the greeting. Run `npm start` to start without watch mode (note: unlike `npm run dev`, `npm start` does not load `.env` automatically and expects environment variables to be set in the environment). You can also run `npm run typecheck`, `npm test` (or `npm run test:watch`), `npm run lint`, and `npm run format` during development.
+  Open `http://localhost:3000/` to see the greeting. Run `npm start` to start without watch mode (note: unlike `npm run dev`, `npm start` does not load `.env` automatically and expects environment variables to be set in the environment). You can also run `npm run typecheck`, `npm test` (or `npm run test:watch`;the first run downloads the `mongod` binary for `mongodb-memory-server`), `npm run lint`, and `npm run format` during development.
 
 ## API Reference Guide
 
-The `/` and `/health` service routes are available without a database; `/ready` reports MongoDB readiness and requires `MONGODB_URI`. The business API described in the [API design document](docs/api-and-db/api-endpoints.md) is implemented under `/api/v1` and requires a reachable MongoDB configured with `MONGODB_URI`. Set `MONGODB_DATABASE` to choose the database and `ADMIN_API_TOKEN` to enable admin routes and flagged-reading access. Admin requests use `Authorization: Bearer <token>`. See `.env.example` for local configuration.
+The liveness routes `/` and `/health` are available without a databas, ewhile `/ready` checks MongoDB reachability. The business API described in the [API design document](docs/api-and-db/api-endpoints.md) is implemented under `/api/v1` and requires a reachable MongoDB configured with `MONGODB_URI`. Set `MONGODB_DATABASE` to choose the database and `ADMIN_API_TOKEN` to enable admin routes and flagged-reading access. Admin requests use `Authorization: Bearer <token>`. See `.env.example` for local configuration.
 
 Interactive API documentation is available at `/docs`; download the OpenAPI JSON from `/openapi.json`. The source specification is [docs/openapi.yaml](docs/openapi.yaml).
 
@@ -58,7 +58,7 @@ Interactive API documentation is available at `/docs`; download the OpenAPI JSON
 | :--- | :--- | :--- | :--- | :--- |
 | `GET` | `/` | None | `200 application/json` — `{ "name": "blarescape-backend" }` | Confirms the server is responding. |
 | `GET` | `/health` | None | `200 application/json` — `{ "status": "ok" }` | Reports service health. |
-| `GET` | `/ready` | None | `200 application/json` — `{ "status": "ready" }`; `503 application/json` — `{ "status": "unavailable" }` | Reports database readiness. |
+| `GET` | `/ready` | None | `200` / `503 application/json` | Reports MongoDB readiness. |
 
 ### Error responses
 
