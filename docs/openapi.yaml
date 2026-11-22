@@ -390,6 +390,30 @@ paths:
                 type: object
                 properties:
                   status: { type: string, const: ok }
+  /ready:
+    servers:
+      - url: /
+    get:
+      tags: [Service]
+      operationId: getReadiness
+      summary: Database readiness check
+      responses:
+        '200':
+          description: Database is reachable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, const: ready }
+        '503':
+          description: Database is unreachable or not configured
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, const: unavailable }
 components:
   securitySchemes:
     AdminToken:

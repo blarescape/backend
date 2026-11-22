@@ -50,7 +50,7 @@ Urban noise pollution can harm residents' well-being and make it harder for citi
 
 ## API Reference Guide
 
-The service routes are available without a database. The business API described in the [API design document](docs/api-and-db/api-endpoints.md) is implemented under `/api/v1` and requires a reachable MongoDB configured with `MONGODB_URI`. Set `MONGODB_DATABASE` to choose the database and `ADMIN_API_TOKEN` to enable admin routes and flagged-reading access. Admin requests use `Authorization: Bearer <token>`. See `.env.example` for local configuration.
+The `/` and `/health` service routes are available without a database; `/ready` reports MongoDB readiness and requires `MONGODB_URI`. The business API described in the [API design document](docs/api-and-db/api-endpoints.md) is implemented under `/api/v1` and requires a reachable MongoDB configured with `MONGODB_URI`. Set `MONGODB_DATABASE` to choose the database and `ADMIN_API_TOKEN` to enable admin routes and flagged-reading access. Admin requests use `Authorization: Bearer <token>`. See `.env.example` for local configuration.
 
 Interactive API documentation is available at `/docs`; download the OpenAPI JSON from `/openapi.json`. The source specification is [docs/openapi.yaml](docs/openapi.yaml).
 
@@ -58,6 +58,7 @@ Interactive API documentation is available at `/docs`; download the OpenAPI JSON
 | :--- | :--- | :--- | :--- | :--- |
 | `GET` | `/` | None | `200 application/json` — `{ "name": "blarescape-backend" }` | Confirms the server is responding. |
 | `GET` | `/health` | None | `200 application/json` — `{ "status": "ok" }` | Reports service health. |
+| `GET` | `/ready` | None | `200 application/json` — `{ "status": "ready" }`; `503 application/json` — `{ "status": "unavailable" }` | Reports database readiness. |
 
 ### Error responses
 

@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
-import type { WithId } from "mongodb";
+import type { Document, ObjectId } from "mongodb";
 
 import { getDb } from "../../db.js";
 import {
@@ -12,7 +12,15 @@ import {
   parseId,
   requiredString,
   siteResponse,
+  statsFromTotals,
 } from "./shared.js";
+
+interface HeatmapGroup extends Document {
+  _id: { neighborhoodId: ObjectId; hour: number };
+  count: number;
+  maxDecibelLevel: number;
+  energy: number;
+}
 
 export const analyticsRoutes: FastifyPluginAsync = async (app) => {
   app.get("/analytics/heatmap", async (request) => {
@@ -26,7 +34,7 @@ export const analyticsRoutes: FastifyPluginAsync = async (app) => {
     const database = await getDb();
     const neighborhoodFilter =
       query.city === undefined ? {} : { city: requiredString(query.city, "city") };
-    const [neighborhoods, readings] = await Promise.all([
+    const [neighborhoods, groups] = await Promise.all([
       database
         .collection<Neighborhood>("neighborhoods")
         .find(neighborhoodFilter)
@@ -34,23 +42,68 @@ export const analyticsRoutes: FastifyPluginAsync = async (app) => {
         .toArray(),
       database
         .collection<Reading>("noise_readings")
-        .find({
-          recordedAt: { $gte: from, $lte: to },
-          isFlagged: false,
-          neighborhoodId: { $ne: null },
-        })
+        .aggregate<HeatmapGroup>([
+          {
+            $match: {
+              recordedAt: { $gte: from, $lte: to },
+              isFlagged: false,
+              neighborhoodId: { $ne: null },
+            },
+          },
+          {
+            $group: {
+              _id: {
+                neighborhoodId: "$neighborhoodId",
+                hour: { $hour: "$recordedAt" },
+              },
+              count: { $sum: 1 },
+              maxDecibelLevel: { $max: "$decibelLevel" },
+              energy: {
+                $sum: { $pow: [10.0, { $divide: ["$decibelLevel", 10.0] }] },
+              },
+            },
+          },
+        ])
         .toArray(),
     ]);
+
+    const hoursByNeighborhood = new Map<string, Map<number, HeatmapGroup>>();
+    for (const group of groups) {
+      const id = group._id.neighborhoodId.toHexString();
+      const hours = hoursByNeighborhood.get(id) ?? new Map<number, HeatmapGroup>();
+      hours.set(group._id.hour, group);
+      hoursByNeighborhood.set(id, hours);
+    }
 
     return {
       from: from.toISOString(),
       to: to.toISOString(),
       neighborhoods: neighborhoods.map((neighborhood) => {
-        const matchingReadings = readings.filter((reading) =>
-          reading.neighborhoodId?.equals(neighborhood._id),
-        );
+        const hours = hoursByNeighborhood.get(neighborhood._id.toHexString());
+        const hourGroups = hours
+          ? [...hours.entries()]
+              .sort(([hourA], [hourB]) => hourA - hourB)
+              .map(([, group]) => group)
+          : [];
+
+        let count = 0;
+        let energy = 0;
+        let maxDecibelLevel = -Infinity;
+        for (const group of hourGroups) {
+          count += group.count;
+          energy += group.energy;
+          maxDecibelLevel = Math.max(maxDecibelLevel, group.maxDecibelLevel);
+        }
+
         const hourly =
-          groupBy === "hourOfDay" ? createHourlyBreakdown(matchingReadings) : undefined;
+          groupBy === "hourOfDay"
+            ? hourGroups.map((group) =>
+                Object.assign(
+                  { hour: group._id.hour },
+                  statsFromTotals(group.count, group.maxDecibelLevel, group.energy),
+                ),
+              )
+            : undefined;
 
         return Object.assign(
           {
@@ -58,7 +111,7 @@ export const analyticsRoutes: FastifyPluginAsync = async (app) => {
             name: neighborhood.name,
             boundary: neighborhood.boundary,
           },
-          logarithmicStatistics(matchingReadings),
+          statsFromTotals(count, maxDecibelLevel, energy),
           hourly ? { hourly } : {},
         );
       }),
@@ -108,18 +161,4 @@ function dateRange(fromValue: unknown, toValue: unknown) {
   const to = parseDate(toValue, "to");
   if (from > to) fail(400, "from must be earlier than or equal to to");
   return { from, to };
-}
-
-function createHourlyBreakdown(readings: WithId<Reading>[]) {
-  const groups = new Map<number, WithId<Reading>[]>();
-  for (const reading of readings) {
-    const hour = reading.recordedAt.getUTCHours();
-    const group = groups.get(hour) ?? [];
-    group.push(reading);
-    groups.set(hour, group);
-  }
-
-  return [...groups.entries()]
-    .sort(([hourA], [hourB]) => hourA - hourB)
-    .map(([hour, group]) => Object.assign({ hour }, logarithmicStatistics(group)));
 }
